@@ -1,0 +1,19 @@
+#once
+
+priv {
+    type u8 = unsigned byte
+    type u16 = unsigned word
+    type u32 = unsigned dword
+    type u64 = unsigned qword
+
+    type i8 = byte
+    type i16 = word
+    type i32 = dword
+    type i64 = qword
+
+    fn abc (name i8*) u8 {
+
+    }
+}
+
+pub type string = u8 *
