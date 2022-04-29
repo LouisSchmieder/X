@@ -13,8 +13,12 @@ fn (mut p FileParser) fn_stmt(access_type ast.AccessType) ast.Stmt {
 
 	p.check(.rbr)
 	p.next()
-	
-	return_type, _ := p.typ()
+
+	mut return_type := p.p.table.get_type('void')
+
+	if p.tok.typ == .name {
+		return_type, _ = p.typ()
+	}
 
 	p.check(.lcbr)
 	p.next()
@@ -25,7 +29,11 @@ fn (mut p FileParser) fn_stmt(access_type ast.AccessType) ast.Stmt {
 	}
 	fn_scope := p.scope
 	p.close_scope()
+
+	p.check(.rcbr)
+	p.next()
  	
+
 	return ast.FnStmt{
 		pos: pos
 		name: name
@@ -38,6 +46,10 @@ fn (mut p FileParser) fn_stmt(access_type ast.AccessType) ast.Stmt {
 
 fn (mut p FileParser) parse_fn_parameter() []ast.FnParameter {
 	mut parameter := []ast.FnParameter{}
+	if p.tok.typ == .rbr {
+		return parameter
+	}
+
 	for {
 		name := p.name()
 		typ, _ := p.typ()

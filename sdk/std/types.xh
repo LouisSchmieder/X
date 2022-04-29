@@ -17,3 +17,5 @@ priv {
 }
 
 pub type string = u8 *
+
+pub fn test () string {}

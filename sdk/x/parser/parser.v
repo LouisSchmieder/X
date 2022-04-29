@@ -61,7 +61,7 @@ fn parse(p &Parser, file &ast.File) {
 			if err.msg().len == 0 {
 				continue
 			}
-			eprintln(err)
+			//eprintln(err)
 			break
 		}
 		parser.file.add_stmt(stmt)
@@ -111,6 +111,7 @@ pub fn (mut p FileParser) parse_top_level() ?ast.Stmt {
 			p.inside_block = true
 			p.block_access_type = access_type
 			mut b := p.block()
+			p.inside_block = false
 			return ast.BlockStmt{
 				access_type: access_type
 				stmts: b
