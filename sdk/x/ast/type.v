@@ -76,13 +76,13 @@ pub fn create_type(name string, info TypeInfo) Type {
 	}
 }
 
-pub fn create_struct(fields ...StructField) Struct {
+pub fn create_struct(fields []StructField) Struct {
 	return Struct{
 		fields: fields
 	}
 }
 
-pub fn create_enums(options map[string]int) Enum {
+pub fn create_enum(options map[string]int) Enum {
 	return Enum{
 		options: options
 	}

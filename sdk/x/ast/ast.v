@@ -2,9 +2,9 @@ module ast
 
 import token
 
-pub type Stmt = TypeStmt | PackageStmt | BlockStmt | FnStmt | AssignStmt | ExprStmt
+pub type Stmt = TypeStmt | PackageStmt | BlockStmt | FnStmt | AssignStmt | ExprStmt | EmptyStmt
 
-pub type Expr = IdentExpr | FnCallExpr
+pub type Expr = IdentExpr | FnCallExpr | StringExpr | EmptyExpr | NumberExpr | NameExpr | StructFieldExpr | StructInitExpr
 
 pub struct PackageStmt {
 pub:
@@ -45,31 +45,69 @@ pub struct FnCallExpr {
 pub:
 	pos token.Position
 	name string
-	parameter []IdentExpr
+	parameter []Expr
 }
 
 pub struct AssignStmt {
 pub:
 	pos token.Position
+	typ AssignType
 	left Expr
 	right Expr
 }
 
+pub struct EmptyStmt {
+
+}
+
+pub struct StructInitExpr {
+pub:
+	pos token.Position
+	name string
+	fields map[string]Expr
+}
+
+pub struct StructFieldExpr {
+pub:
+	pos token.Position
+	parent Expr
+	name string
+}
+
 pub struct IdentExpr {
 pub:
-	typ IdentType
+	pos token.Position
+	name string
+}
+
+pub struct EmptyExpr {}
+
+pub struct NameExpr {
+pub:
+	pos token.Position
 	lit string
 }
 
-pub enum IdentType {
-	name
-	variable
-	typ
+pub struct StringExpr {
+pub:
+	pos token.Position
+	lit string
+}
+
+pub struct NumberExpr {
+pub:
+	pos token.Position
+	num int
 }
 
 pub enum AccessType {
 	private
 	public
+}
+
+pub enum AssignType {
+	declare
+	assign
 }
 
 pub struct FnParameter {

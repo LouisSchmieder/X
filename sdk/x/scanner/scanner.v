@@ -51,6 +51,8 @@ pub fn (mut scanner Scanner) next() (token.Token, token.Position) {
 	}
 	if scanner.is_name() {
 		name := scanner.name()
+		scanner.idx--
+		scanner.char_nr--
 		if name in token.c_keywords {
 			return token.c_keywords[name], scanner.pos(name)
 		}
@@ -64,6 +66,8 @@ pub fn (mut scanner Scanner) next() (token.Token, token.Position) {
 	}
 	if scanner.is_number() {
 		number := scanner.number()
+		scanner.idx--
+		scanner.char_nr--
 		return token.number, scanner.pos(number)
 	}
 	return token.error, scanner.pos('')
@@ -76,8 +80,6 @@ fn (mut scanner Scanner) name() string {
 		scanner.idx++
 		scanner.char_nr++
 	}
-	scanner.idx--
-	scanner.char_nr--
 
 	return tok.bytestr()
 }

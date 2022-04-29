@@ -1,5 +1,6 @@
 module parser
 
+import token
 import ast
 
 fn (mut p FileParser) fn_stmt(access_type ast.AccessType) ast.Stmt {
@@ -16,7 +17,7 @@ fn (mut p FileParser) fn_stmt(access_type ast.AccessType) ast.Stmt {
 
 	mut return_type := p.p.table.get_type('void')
 
-	if p.tok.typ == .name {
+	if p.tok.typ in [.name, .key_struct] {
 		return_type, _ = p.typ()
 	}
 
@@ -41,6 +42,23 @@ fn (mut p FileParser) fn_stmt(access_type ast.AccessType) ast.Stmt {
 		parameter: fn_parameter
 		return_type: return_type
 		stmts: stmts
+	}
+}
+
+fn (mut p FileParser) fn_call(name string, pos token.Position) ast.FnCallExpr {
+	p.next()
+	mut exprs := []ast.Expr{}
+	for {
+		exprs << p.expr()
+		if p.tok.typ == .rbr {
+			break
+		}
+	}
+	p.next()
+	return ast.FnCallExpr{
+		pos: pos
+		name: name
+		parameter: exprs
 	}
 }
 
