@@ -11,6 +11,16 @@ priv {
     type i32 = dword
     type i64 = qword
 
+    type TestStruct = struct {
+        id i8
+        name u8*
+    }
+
+    type TestEnum = enum {
+        abc
+        bcd        
+    }
+
     fn abc (name i8*) u8 {
 
     }
@@ -18,4 +28,6 @@ priv {
 
 pub type string = u8 *
 
-pub fn test () string {}
+pub fn test () TestStruct {
+    abc(8)
+}
