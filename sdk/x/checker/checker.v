@@ -82,7 +82,10 @@ fn (mut c FileChecker) expr(mut expr ast.Expr) {
 }
 
 fn (mut c FileChecker) block_stmt(mut node ast.BlockStmt) {
-
+	mut stmts := node.stmts
+	for mut stmt in stmts {
+		c.stmt(mut stmt)
+	}
 }
 
 fn (mut c FileChecker) fn_stmt(mut node ast.FnStmt) {
