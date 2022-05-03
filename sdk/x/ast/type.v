@@ -1,7 +1,8 @@
 module ast
 
-pub type TypeInfo = Struct | Enum | DataType | Pointer
+pub type TypeInfo = DataType | Enum | Pointer | Struct | Unresolved
 
+[heap]
 pub struct Type {
 pub mut:
 	name string
@@ -22,6 +23,9 @@ pub fn (typ Type) size() int {
 		Pointer {
 			return typ.info.size
 		}
+		Unresolved {
+			return 0
+		}
 	}
 }
 
@@ -41,6 +45,8 @@ pub fn (typ Type) get_pointer() Pointer {
 	return typ.info as Pointer
 }
 
+pub struct Unresolved {}
+
 pub struct Struct {
 pub:
 	fields []StructField
@@ -53,24 +59,24 @@ pub:
 
 pub struct DataType {
 pub mut:
-	size int
+	size     int
 	unsigned bool
 }
 
 pub struct StructField {
 pub mut:
 	name string
-	typ Type
+	typ  &Type
 }
 
 pub struct Pointer {
 pub mut:
-	base Type
+	base &Type
 	size int = 4
 }
 
-pub fn create_type(name string, info TypeInfo) Type {
-	return Type{
+pub fn create_type(name string, info TypeInfo) &Type {
+	return &Type{
 		name: name
 		info: info
 	}
@@ -95,12 +101,18 @@ pub fn create_datatype(size int, unsigned bool) DataType {
 	}
 }
 
+pub fn (mut t Type) set_unsigned() {
+	if mut t.info is DataType {
+		t.info.unsigned = true
+	}
+}
+
 pub fn (st Struct) size() int {
 	return st.offset('')
 }
 
 pub fn (st Struct) offset(name string) int {
-		mut i := 0
+	mut i := 0
 	for field in st.fields {
 		if field.name == name {
 			return i
@@ -109,4 +121,3 @@ pub fn (st Struct) offset(name string) int {
 	}
 	return i
 }
-

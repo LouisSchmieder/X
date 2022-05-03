@@ -2,25 +2,38 @@ module ast
 
 pub struct TypeTable {
 pub mut:
-	types []Type
+	types     []&Type
 	type_idxs map[string]int
 }
 
 pub fn create_table() &TypeTable {
-	return &TypeTable{
-	}
+	return &TypeTable{}
 }
 
-pub fn (mut table TypeTable) create_pointer(base Type) Type {
+pub fn (mut table TypeTable) create_pointer(base &Type) &Type {
 	if table.type_exists('$base.name*') {
 		return table.get_type('$base.name*')
 	}
-	ptr := create_type('$base.name*', Pointer{base: base})
+	ptr := create_type('$base.name*', Pointer{ base: base })
 	table.add_type(ptr)
 	return ptr
 }
 
-pub fn (mut table TypeTable) add_type(typ Type) {
+pub fn (mut table TypeTable) add_unresolved_type(name string) &Type {
+	t := &Type{
+		name: name
+		info: Unresolved{}
+	}
+	table.add_type(t)
+	return t
+}
+
+pub fn (mut table TypeTable) remove_type(name string) {
+	table.types = table.types.filter(it.name != name)
+	table.type_idxs.delete(name)
+}
+
+pub fn (mut table TypeTable) add_type(typ &Type) {
 	table.types << typ
 	table.type_idxs[typ.name] = table.types.len - 1
 }
@@ -29,7 +42,11 @@ pub fn (mut table TypeTable) type_exists(name string) bool {
 	return name in table.type_idxs
 }
 
-pub fn (mut table TypeTable) get_type(name string) Type {
+pub fn (mut table TypeTable) type_data_exists(typ Type) bool {
+	return table.types.filter(*it == typ).len > 0
+}
+
+pub fn (mut table TypeTable) get_type(name string) &Type {
 	if !table.type_exists(name) {
 		return create_type('', create_datatype(0, false))
 	}

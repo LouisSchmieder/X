@@ -18,7 +18,7 @@ fn (mut p FileParser) fn_stmt(access_type ast.AccessType) ast.Stmt {
 	mut return_type := p.p.table.get_type('void')
 
 	if p.tok.typ in [.name, .key_struct] {
-		return_type, _ = p.typ()
+		return_type = p.typ()
 	}
 
 	p.check(.lcbr)
@@ -33,7 +33,6 @@ fn (mut p FileParser) fn_stmt(access_type ast.AccessType) ast.Stmt {
 
 	p.check(.rcbr)
 	p.next()
- 	
 
 	return ast.FnStmt{
 		pos: pos
@@ -54,7 +53,6 @@ fn (mut p FileParser) fn_call(name string, pos token.Position) ast.FnCallExpr {
 			break
 		}
 	}
-	p.next()
 	return ast.FnCallExpr{
 		pos: pos
 		name: name
@@ -70,8 +68,8 @@ fn (mut p FileParser) parse_fn_parameter() []ast.FnParameter {
 
 	for {
 		name := p.name()
-		typ, _ := p.typ()
-		
+		typ := p.typ()
+
 		parameter << ast.FnParameter{
 			name: name
 			typ: typ
@@ -81,7 +79,6 @@ fn (mut p FileParser) parse_fn_parameter() []ast.FnParameter {
 			p.next()
 			continue
 		} else if p.tok.typ == .rbr {
-			p.next()
 			break
 		} else {
 			p.error('')

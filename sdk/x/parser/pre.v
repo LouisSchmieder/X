@@ -22,7 +22,7 @@ pub fn (mut p FileParser) pre_use() {
 	p.check(.key_use)
 	p.next()
 	p.check(.str)
-	path := '${p.file.get_dir()}/${p.pos.tok}'
+	path := '$p.file.get_dir()/$p.pos.tok'
 	eprintln(path)
 	p.p.parse_file(path)
 }

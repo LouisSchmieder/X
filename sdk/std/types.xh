@@ -1,5 +1,13 @@
 #once
 
+pub fn test (test bool) TestStruct {
+    test := TestStruct{
+        id = 8
+        name = "abc"
+    }
+    test = abc(8)
+}
+
 priv {
     type u8 = unsigned byte
     type u16 = unsigned word
@@ -27,7 +35,3 @@ priv {
 }
 
 pub type string = u8 *
-
-pub fn test () TestStruct {
-    abc(8)
-}

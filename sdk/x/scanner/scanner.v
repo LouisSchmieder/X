@@ -5,10 +5,10 @@ import token
 
 pub struct Scanner {
 mut:
-	buf []u8
-	idx int
-	char_nr u32
-	line_nr u32
+	buf      []u8
+	idx      int
+	char_nr  u32
+	line_nr  u32
 	filename string
 }
 
@@ -86,7 +86,9 @@ fn (mut scanner Scanner) name() string {
 
 fn (mut scanner Scanner) number() string {
 	mut tok := []u8{}
-	for scanner.valid() && (scanner.is_number() || scanner.now() in [`x`, `X`, `b`, `B`] || (scanner.now() >= `a` && scanner.now() <= `f`) || (scanner.now() >= `A` && scanner.now() <= `F`)) {
+	for scanner.valid() && (scanner.is_number() || scanner.now() in [`x`, `X`, `b`, `B`]
+		|| (scanner.now() >= `a` && scanner.now() <= `f`)
+		|| (scanner.now() >= `A` && scanner.now() <= `F`)) {
 		tok << scanner.now()
 		scanner.idx++
 		scanner.char_nr++
@@ -114,7 +116,7 @@ fn (scanner Scanner) now() byte {
 }
 
 fn (scanner Scanner) pos(tok string) token.Position {
-	return token.Position {
+	return token.Position{
 		line_nr: scanner.line_nr
 		char: scanner.char_nr
 		tok: tok
@@ -122,11 +124,10 @@ fn (scanner Scanner) pos(tok string) token.Position {
 }
 
 fn (scanner Scanner) is_name() bool {
-	return (scanner.now() >= `A` && scanner.now() <= `Z`) || (scanner.now() >= `a` && scanner.now() <= `z`) || scanner.now() in [`_`]
+	return (scanner.now() >= `A` && scanner.now() <= `Z`)
+		|| (scanner.now() >= `a` && scanner.now() <= `z`) || scanner.now() == `_`
 }
-
 
 fn (scanner Scanner) is_number() bool {
 	return scanner.now() >= `0` && scanner.now() <= `9`
 }
-

@@ -1,5 +1,7 @@
 module ast
 
+import os
+
 [heap]
 pub struct File {
 pub:
@@ -9,6 +11,9 @@ pub mut:
 	scope &Scope
 	table &TypeTable
 	stmts []Stmt
+
+	errors []Message
+	warns  []Message
 }
 
 pub fn create_ast_file(name string, parent &Scope) &File {
@@ -34,4 +39,16 @@ pub fn (mut file File) add_stmt(stmt Stmt) {
 
 pub fn (file File) get_scope() &Scope {
 	return file.scope
+}
+
+pub fn (file File) write_errors() {
+	content := os.read_file(file.name) or { '' }
+	lines := content.split_into_lines()
+	for error in file.errors {
+		println('$file.name $error.pos.line_nr:$error.pos.char - $error.msg')
+		println(lines[error.pos.line_nr])
+		mut space := []u8{len: int(error.pos.char), init: ` `}
+		space << []u8{len: error.pos.tok.len, init: `~`}
+		println(space.bytestr())
+	}
 }

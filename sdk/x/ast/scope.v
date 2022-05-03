@@ -3,13 +3,13 @@ module ast
 [heap]
 pub struct Scope {
 pub mut:
-	vars []Variable
+	vars   []Variable
 	parent &Scope
 }
 
 pub struct Variable {
 pub mut:
-	typ Type
+	typ  Type
 	name string
 }
 

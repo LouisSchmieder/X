@@ -9,22 +9,23 @@ pub struct Parser {
 mut:
 	files []&ast.File
 	table &ast.TypeTable // Global table
+	unres &ast.TypeTable // Unresolved types
 	scope &ast.Scope
 }
 
 pub struct FileParser {
 mut:
-	p &Parser
-	tok token.Token
-	pos token.Position
-	lit string
-	s &scanner.Scanner
+	p    &Parser
+	tok  token.Token
+	pos  token.Position
+	lit  string
+	s    &scanner.Scanner
 	path string
 	file &ast.File
 
 	scope &ast.Scope
 
-	inside_block bool
+	inside_block      bool
 	block_access_type ast.AccessType
 }
 
@@ -34,19 +35,22 @@ pub fn create_parser() &Parser {
 	return &Parser{
 		files: []&ast.File{}
 		table: table
+		unres: ast.create_table()
 		scope: ast.create_scope(&ast.Scope(voidptr(0)))
 	}
 }
 
 pub fn (mut p Parser) parse_file(path string) {
 	file := ast.create_ast_file(path, p.scope)
+	mut done := false
 	if p.files.filter(it.name == file.name && it.once).len == 0 {
 		p.files << file
-		/* go */ parse(&p, file)
+		go parse(&p, file, mut &done)
 	}
+	for !done {}
 }
 
-fn parse(p &Parser, file &ast.File) {
+fn parse(p &Parser, file &ast.File, mut done &bool) {
 	mut parser := FileParser{
 		p: p
 		s: scanner.create_scanner(file.name)
@@ -61,14 +65,17 @@ fn parse(p &Parser, file &ast.File) {
 			if err.msg().len == 0 {
 				continue
 			}
-			eprintln(err)
+			// eprintln(err)
 			break
 		}
 		parser.file.add_stmt(stmt)
 	}
+	file.write_errors()
+	done = true
 }
 
 pub fn (mut p FileParser) error(msg string) {
+	p.file.errors << ast.create_msg(p.pos, msg)
 }
 
 pub fn (mut p FileParser) warn(msg string) {
@@ -99,7 +106,7 @@ pub fn (mut p FileParser) parse_top_level() ?ast.Stmt {
 		access_type = p.block_access_type
 	}
 
-	eprintln('$p.tok.typ ($p.pos.line_nr:$p.pos.char)')
+	eprintln('$p.tok.typ ($p.pos.line_nr:$p.pos.char) $access_type')
 
 	match p.tok.typ {
 		.hash {
@@ -120,8 +127,7 @@ pub fn (mut p FileParser) parse_top_level() ?ast.Stmt {
 			}
 		}
 		.key_type {
-			p.type_stmt(access_type)
-			return none
+			return p.type_stmt(access_type)
 		}
 		.key_fn {
 			return p.fn_stmt(access_type)
@@ -136,7 +142,7 @@ pub fn (mut p FileParser) expr() ast.Expr {
 	pos := p.pos
 	match p.tok.typ {
 		.str {
-			return p.parse_string() 
+			return p.parse_string()
 		}
 		.number {
 			num := p.number()
@@ -179,7 +185,9 @@ pub fn (mut p FileParser) stmt() ast.Stmt {
 	left := p.expr()
 	match left {
 		ast.FnCallExpr {
-			return ast.ExprStmt{expr: left}
+			return ast.ExprStmt{
+				expr: left
+			}
 		}
 		ast.IdentExpr, ast.StructFieldExpr {
 			mut assign_type := ast.AssignType.assign
@@ -190,6 +198,7 @@ pub fn (mut p FileParser) stmt() ast.Stmt {
 			p.check(.eq)
 			p.next()
 			right := p.expr()
+			p.next()
 			return ast.AssignStmt{
 				pos: pos
 				typ: assign_type
@@ -205,11 +214,11 @@ pub fn (mut p FileParser) stmt() ast.Stmt {
 	return ast.EmptyStmt{}
 }
 
-pub fn (mut p FileParser) typ() (ast.Type, bool) {
+pub fn (mut p FileParser) typ() &ast.Type {
 	if p.tok.typ == .key_struct {
-		return p.parse_struct(), false
+		return p.parse_struct()
 	} else if p.tok.typ == .key_enum {
-		return p.parse_enum(), false
+		return p.parse_enum()
 	}
 
 	mut unsigned := false
@@ -220,8 +229,15 @@ pub fn (mut p FileParser) typ() (ast.Type, bool) {
 	typ := p.name()
 	mut t := if p.file.table.type_exists(typ) {
 		p.file.table.get_type(typ)
-	} else {
+	} else if p.p.table.type_exists(typ) {
 		p.p.table.get_type(typ)
+	} else if p.p.unres.type_exists(typ) {
+		p.p.unres.get_type(typ)
+	} else {
+		p.p.unres.add_unresolved_type(typ)
+	}
+	if unsigned {
+		t.set_unsigned()
 	}
 	for p.tok.typ == .mult {
 		t = p.p.table.create_pointer(t)
@@ -230,15 +246,15 @@ pub fn (mut p FileParser) typ() (ast.Type, bool) {
 	if t.info !is ast.DataType && unsigned {
 		p.error('Only data types can be unsigned')
 	}
-	return t, unsigned
+	return t
 }
 
-pub fn (mut p FileParser) parse_enum() ast.Type {
+pub fn (mut p FileParser) parse_enum() &ast.Type {
 	p.next()
 	p.check(.lcbr)
 	p.next()
 
-	mut options := map[string]int
+	mut options := map[string]int{}
 	mut i := 0
 
 	for {
@@ -251,12 +267,12 @@ pub fn (mut p FileParser) parse_enum() ast.Type {
 		} else {
 			i++
 		}
-		if name !in options {	
+		if name !in options {
 			options[name] = value
 		}
 		if p.tok.typ == .rcbr {
 			break
-		}	
+		}
 	}
 
 	p.check(.rcbr)
@@ -267,7 +283,7 @@ pub fn (mut p FileParser) parse_enum() ast.Type {
 	return en
 }
 
-pub fn (mut p FileParser) parse_struct() ast.Type {	
+pub fn (mut p FileParser) parse_struct() &ast.Type {
 	p.next()
 	p.check(.lcbr)
 	p.next()
@@ -276,7 +292,7 @@ pub fn (mut p FileParser) parse_struct() ast.Type {
 
 	for {
 		name := p.name()
-		typ, _ := p.typ()
+		typ := p.typ()
 		field << ast.StructField{
 			name: name
 			typ: typ
@@ -324,29 +340,40 @@ pub fn (mut p FileParser) block() []ast.Stmt {
 	return stmt
 }
 
-pub fn (mut p FileParser) type_stmt(access_type ast.AccessType) {
+pub fn (mut p FileParser) type_stmt(access_type ast.AccessType) ast.TypeStmt {
+	pos := p.pos
 	p.next()
 	name := p.pos.tok
 	p.next()
 	p.check(.eq)
 	p.next()
-	base, unsigned := p.typ()
-	mut typ := ast.create_type(name, base.info)
-	match mut typ.info {
-		ast.DataType {
-			typ.info.unsigned = unsigned
-		}
-		else {}
+	base := p.typ()
+	mut typ := if p.p.unres.type_exists(name) {
+		p.p.unres.get_type(name)
+	} else {
+		ast.create_type(name, base.info)
+	}
+	if p.p.unres.type_exists(name) {
+		typ.info = base.info
+		p.p.unres.remove_type(name)
+		eprintln(p.p.unres)
 	}
 	if access_type == .public {
 		p.p.table.add_type(typ)
 	} else {
 		p.file.table.add_type(typ)
 	}
+	return ast.TypeStmt{
+		pos: pos
+		name: name
+		typ: typ
+	}
 }
 
 pub fn (mut p FileParser) parse_string() ast.Expr {
-	p.next()
+	defer {
+		p.next()
+	}
 	return ast.StringExpr{
 		pos: p.pos
 		lit: p.pos.tok
