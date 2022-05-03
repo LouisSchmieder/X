@@ -1,5 +1,6 @@
 module ast
 
+[heap]
 pub struct TypeTable {
 pub mut:
 	types     []&Type
@@ -38,15 +39,15 @@ pub fn (mut table TypeTable) add_type(typ &Type) {
 	table.type_idxs[typ.name] = table.types.len - 1
 }
 
-pub fn (mut table TypeTable) type_exists(name string) bool {
+pub fn (table TypeTable) type_exists(name string) bool {
 	return name in table.type_idxs
 }
 
-pub fn (mut table TypeTable) type_data_exists(typ Type) bool {
+pub fn (table TypeTable) type_data_exists(typ Type) bool {
 	return table.types.filter(*it == typ).len > 0
 }
 
-pub fn (mut table TypeTable) get_type(name string) &Type {
+pub fn (table TypeTable) get_type(name string) &Type {
 	if !table.type_exists(name) {
 		return create_type('', create_datatype(0, false))
 	}

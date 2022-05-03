@@ -2,7 +2,7 @@ module ast
 
 import token
 
-pub type Stmt = AssignStmt | BlockStmt | EmptyStmt | ExprStmt | FnStmt | PackageStmt | TypeStmt
+pub type Stmt = AssignStmt | BlockStmt | EmptyStmt | ExprStmt | FnStmt | TypeStmt
 
 pub type Expr = EmptyExpr
 	| FnCallExpr
@@ -13,14 +13,8 @@ pub type Expr = EmptyExpr
 	| StructFieldExpr
 	| StructInitExpr
 
-pub struct PackageStmt {
-pub:
-	pos  token.Position
-	name IdentExpr
-}
-
 pub struct ExprStmt {
-pub:
+pub mut:
 	expr Expr
 }
 

@@ -47,7 +47,7 @@ pub fn (file File) write_errors() {
 	for error in file.errors {
 		println('$file.name $error.pos.line_nr:$error.pos.char - $error.msg')
 		println(lines[error.pos.line_nr])
-		mut space := []u8{len: int(error.pos.char), init: ` `}
+		mut space := []u8{len: int(error.pos.char - 1), init: ` `}
 		space << []u8{len: error.pos.tok.len, init: `~`}
 		println(space.bytestr())
 	}

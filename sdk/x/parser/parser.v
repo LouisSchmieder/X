@@ -40,6 +40,10 @@ pub fn create_parser() &Parser {
 	}
 }
 
+pub fn (mut p Parser) get_data() ([]&ast.File, &ast.TypeTable, &ast.TypeTable, &ast.Scope) {
+	return p.files, p.table, p.unres, p.scope
+}
+
 pub fn (mut p Parser) parse_file(path string) {
 	file := ast.create_ast_file(path, p.scope)
 	mut done := false
@@ -106,7 +110,7 @@ pub fn (mut p FileParser) parse_top_level() ?ast.Stmt {
 		access_type = p.block_access_type
 	}
 
-	eprintln('$p.tok.typ ($p.pos.line_nr:$p.pos.char) $access_type')
+	//eprintln('$p.tok.typ ($p.pos.line_nr:$p.pos.char) $access_type')
 
 	match p.tok.typ {
 		.hash {
@@ -356,7 +360,7 @@ pub fn (mut p FileParser) type_stmt(access_type ast.AccessType) ast.TypeStmt {
 	if p.p.unres.type_exists(name) {
 		typ.info = base.info
 		p.p.unres.remove_type(name)
-		eprintln(p.p.unres)
+		//eprintln(p.p.unres)
 	}
 	if access_type == .public {
 		p.p.table.add_type(typ)
