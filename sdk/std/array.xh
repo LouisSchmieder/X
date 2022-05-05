@@ -1,0 +1,5 @@
+#once
+
+#use "types.xh"
+
+pub fn test (test u32) {}

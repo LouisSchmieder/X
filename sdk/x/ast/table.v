@@ -47,6 +47,10 @@ pub fn (table TypeTable) type_data_exists(typ Type) bool {
 	return table.types.filter(*it == typ).len > 0
 }
 
+pub fn (table TypeTable) type_ptr_exists(typ &Type) bool {
+	return typ in table.types
+}
+
 pub fn (table TypeTable) get_type(name string) &Type {
 	if !table.type_exists(name) {
 		return create_type('', create_datatype(0, false))

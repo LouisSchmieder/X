@@ -30,6 +30,7 @@ pub:
 	name        string
 	scope       &Scope
 	parameter   []FnParameter
+	ret_pos     token.Position
 	return_type &Type
 	stmts       []Stmt
 }
@@ -111,6 +112,7 @@ pub enum AssignType {
 
 pub struct FnParameter {
 pub:
+	pos token.Position
 	name string
 	typ  &Type
 }

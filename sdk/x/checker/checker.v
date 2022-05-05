@@ -59,6 +59,12 @@ fn check_file(mut checker &Checker, file &ast.File) {
 	checker.working--
 }
 
+fn (mut c FileChecker) typ(typ &ast.Type, pos token.Position) {
+	if !c.file.table.type_ptr_exists(typ) && !c.checker.table.type_ptr_exists(typ) {
+		c.error('Unknown type `$typ.name`', pos)
+	}
+}
+
 fn (mut c FileChecker) error(msg string, pos token.Position) {
 	c.file.errors << ast.create_msg(pos, msg)
 }
@@ -73,6 +79,9 @@ fn (mut c FileChecker) stmt(mut stmt ast.Stmt) {
 		}
 		ast.FnStmt {
 			c.fn_stmt(mut stmt)
+		}
+		ast.AssignStmt {
+			c.assign_stmt(mut stmt)
 		}
 		else {}
 	}
@@ -91,6 +100,7 @@ fn (mut c FileChecker) block_stmt(mut node ast.BlockStmt) {
 fn (mut c FileChecker) fn_stmt(mut node ast.FnStmt) {
 	mut return_need := false
 	if node.return_type != c.checker.table.get_type('void') {
+		c.typ(node.return_type, node.ret_pos)
 		c.required_return_type = node.return_type
 		return_need = true
 		defer {
@@ -98,6 +108,11 @@ fn (mut c FileChecker) fn_stmt(mut node ast.FnStmt) {
 			c.returns = 0
 		}
 	}
+
+	for param in node.parameter {
+		c.typ(param.typ, param.pos)
+	}
+
 	mut stmts := node.stmts
 
 	for mut stmt in stmts {
@@ -109,4 +124,8 @@ fn (mut c FileChecker) fn_stmt(mut node ast.FnStmt) {
 			c.error('Missing return at the end of function `$node.name`', node.pos)
 		}
 	} 
+}
+
+fn (mut c FileChecker) assign_stmt(mut node ast.AssignStmt) {
+
 }

@@ -8,7 +8,7 @@ pub fn test (test bool) TestStruct {
     test = abc(8)
 }
 
-priv {
+pub {
     type u8 = unsigned byte
     type u16 = unsigned word
     type u32 = unsigned dword

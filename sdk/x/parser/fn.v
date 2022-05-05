@@ -15,6 +15,7 @@ fn (mut p FileParser) fn_stmt(access_type ast.AccessType) ast.Stmt {
 	p.check(.rbr)
 	p.next()
 
+	ret_pos := p.pos
 	mut return_type := p.p.table.get_type('void')
 
 	if p.tok.typ in [.name, .key_struct] {
@@ -25,6 +26,12 @@ fn (mut p FileParser) fn_stmt(access_type ast.AccessType) ast.Stmt {
 	p.next()
 	mut stmts := []ast.Stmt{}
 	p.open_scope()
+	for param in fn_parameter {
+		p.scope.add_var(ast.Variable{
+			name: param.name
+			typ: param.typ
+		})
+	}
 	for p.tok.typ != .rcbr {
 		stmts << p.stmt()
 	}
@@ -39,6 +46,7 @@ fn (mut p FileParser) fn_stmt(access_type ast.AccessType) ast.Stmt {
 		name: name
 		scope: fn_scope
 		parameter: fn_parameter
+		ret_pos: ret_pos
 		return_type: return_type
 		stmts: stmts
 	}
@@ -67,12 +75,14 @@ fn (mut p FileParser) parse_fn_parameter() []ast.FnParameter {
 	}
 
 	for {
+		pos := p.pos
 		name := p.name()
 		typ := p.typ()
 
 		parameter << ast.FnParameter{
 			name: name
 			typ: typ
+			pos: pos
 		}
 
 		if p.tok.typ == .comma {
