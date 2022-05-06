@@ -87,7 +87,7 @@ fn (mut c FileChecker) stmt(mut stmt ast.Stmt) {
 	}
 }
 
-fn (mut c FileChecker) expr(mut expr ast.Expr) {
+fn (mut c FileChecker) expr(mut expr ast.Expr) &ast.Type {
 }
 
 fn (mut c FileChecker) block_stmt(mut node ast.BlockStmt) {
@@ -99,6 +99,10 @@ fn (mut c FileChecker) block_stmt(mut node ast.BlockStmt) {
 
 fn (mut c FileChecker) fn_stmt(mut node ast.FnStmt) {
 	mut return_need := false
+	c.scope = node.scope
+	defer {
+		c.scope = c.scope.parent
+	}
 	if node.return_type != c.checker.table.get_type('void') {
 		c.typ(node.return_type, node.ret_pos)
 		c.required_return_type = node.return_type
@@ -127,5 +131,16 @@ fn (mut c FileChecker) fn_stmt(mut node ast.FnStmt) {
 }
 
 fn (mut c FileChecker) assign_stmt(mut node ast.AssignStmt) {
+	mut typ := c.checker.table.get_type('void')
+	match node.left {
+		ast.IdentExpr {
+			
+		}
+		ast.StructFieldExpr {
 
+		}
+		else {
+			c.error('Unexpected expr', node.left.pos)
+		}
+	}
 }

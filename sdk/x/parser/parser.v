@@ -3,6 +3,7 @@ module parser
 import scanner
 import token
 import ast
+import util
 
 [heap]
 pub struct Parser {
@@ -11,6 +12,8 @@ mut:
 	table &ast.TypeTable // Global table
 	unres &ast.TypeTable // Unresolved types
 	scope &ast.Scope
+
+	tmp   &util.TmpVar
 }
 
 pub struct FileParser {
@@ -37,6 +40,7 @@ pub fn create_parser() &Parser {
 		table: table
 		unres: ast.create_table()
 		scope: ast.create_scope(&ast.Scope(voidptr(0)))
+		tmp: util.new_tmp_var_instance()
 	}
 }
 
@@ -76,6 +80,10 @@ fn parse(p &Parser, file &ast.File, mut done &bool) {
 	}
 	file.write_errors()
 	done = true
+}
+
+pub fn (mut p FileParser) tmp() string {
+	return p.p.tmp.tmp_var()
 }
 
 pub fn (mut p FileParser) error(msg string) {
@@ -287,33 +295,6 @@ pub fn (mut p FileParser) parse_enum() &ast.Type {
 	return en
 }
 
-pub fn (mut p FileParser) parse_struct() &ast.Type {
-	p.next()
-	p.check(.lcbr)
-	p.next()
-
-	mut field := []ast.StructField{}
-
-	for {
-		name := p.name()
-		typ := p.typ()
-		field << ast.StructField{
-			name: name
-			typ: typ
-		}
-		if p.tok.typ == .rcbr {
-			break
-		}
-	}
-
-	p.check(.rcbr)
-	p.next()
-
-	st := ast.create_type('anon_struct', ast.create_struct(field))
-	p.p.table.add_type(st)
-	return st
-}
-
 pub fn (mut p FileParser) name() string {
 	p.check(.name)
 	name := p.pos.tok
@@ -355,12 +336,11 @@ pub fn (mut p FileParser) type_stmt(access_type ast.AccessType) ast.TypeStmt {
 	mut typ := if p.p.unres.type_exists(name) {
 		p.p.unres.get_type(name)
 	} else {
-		ast.create_type(name, base.info)
+		ast.create_alias(name, base)
 	}
 	if p.p.unres.type_exists(name) {
-		typ.info = base.info
+		typ.info = ast.Alias{base: base}
 		p.p.unres.remove_type(name)
-		//eprintln(p.p.unres)
 	}
 	if access_type == .public {
 		p.p.table.add_type(typ)

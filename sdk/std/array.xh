@@ -2,4 +2,7 @@
 
 #use "types.xh"
 
-pub fn test (test u32) {}
+pub type Array = struct {
+    len int
+    data void*
+}

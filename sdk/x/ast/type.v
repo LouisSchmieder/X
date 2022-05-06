@@ -1,6 +1,6 @@
 module ast
 
-pub type TypeInfo = DataType | Enum | Pointer | Struct | Unresolved
+pub type TypeInfo = DataType | Enum | Pointer | Struct | Unresolved | Alias
 
 [heap]
 pub struct Type {
@@ -26,6 +26,9 @@ pub fn (typ Type) size() int {
 		Unresolved {
 			return 0
 		}
+		Alias {
+			return typ.get_alias().size()
+		}
 	}
 }
 
@@ -43,6 +46,10 @@ pub fn (typ Type) get_data_info() DataType {
 
 pub fn (typ Type) get_pointer() Pointer {
 	return typ.info as Pointer
+}
+
+pub fn (typ Type) get_alias() &Type {
+	return (typ.info as Alias).base
 }
 
 pub struct Unresolved {}
@@ -75,11 +82,20 @@ pub mut:
 	size int = 4
 }
 
+pub struct Alias {
+pub mut:
+	base &Type
+}
+
 pub fn create_type(name string, info TypeInfo) &Type {
 	return &Type{
 		name: name
 		info: info
 	}
+}
+
+pub fn create_alias(name string, typ &Type) &Type {
+	return create_type(name, Alias{base:typ})
 }
 
 pub fn create_struct(fields []StructField) Struct {

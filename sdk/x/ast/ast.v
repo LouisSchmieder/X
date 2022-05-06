@@ -64,6 +64,7 @@ pub struct StructFieldExpr {
 pub:
 	pos    token.Position
 	parent Expr
+	typ    &Type
 	name   string
 }
 
@@ -73,7 +74,10 @@ pub:
 	name string
 }
 
-pub struct EmptyExpr {}
+pub struct EmptyExpr {
+pub:
+	pos token.Position
+}
 
 pub struct NameExpr {
 pub:
