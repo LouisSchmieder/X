@@ -13,7 +13,7 @@ mut:
 	unres &ast.TypeTable // Unresolved types
 	scope &ast.Scope
 
-	tmp   &util.TmpVar
+	tmp &util.TmpVar
 }
 
 pub struct FileParser {
@@ -118,7 +118,7 @@ pub fn (mut p FileParser) parse_top_level() ?ast.Stmt {
 		access_type = p.block_access_type
 	}
 
-	//eprintln('$p.tok.typ ($p.pos.line_nr:$p.pos.char) $access_type')
+	// eprintln('$p.tok.typ ($p.pos.line_nr:$p.pos.char) $access_type')
 
 	match p.tok.typ {
 		.hash {
@@ -182,10 +182,14 @@ pub fn (mut p FileParser) expr() ast.Expr {
 					pos: p.pos
 					name: name
 					parent: ident
+					typ: 0
 				}
 				p.next()
 			}
 			return ident
+		}
+		.lbr {
+			return p.cast_expr()
 		}
 		else {}
 	}
@@ -325,6 +329,22 @@ pub fn (mut p FileParser) block() []ast.Stmt {
 	return stmt
 }
 
+pub fn (mut p FileParser) cast_expr() ast.CastExpr {
+	pos := p.pos
+	p.next()
+	to := p.typ()
+	p.check(.rbr)
+	p.next()
+
+	expr := p.expr()
+
+	return ast.CastExpr{
+		pos: pos
+		to: to
+		expr: expr
+	}
+}
+
 pub fn (mut p FileParser) type_stmt(access_type ast.AccessType) ast.TypeStmt {
 	pos := p.pos
 	p.next()
@@ -339,7 +359,9 @@ pub fn (mut p FileParser) type_stmt(access_type ast.AccessType) ast.TypeStmt {
 		ast.create_alias(name, base)
 	}
 	if p.p.unres.type_exists(name) {
-		typ.info = ast.Alias{base: base}
+		typ.info = ast.Alias{
+			base: base
+		}
 		p.p.unres.remove_type(name)
 	}
 	if access_type == .public {

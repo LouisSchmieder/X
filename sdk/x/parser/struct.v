@@ -32,7 +32,7 @@ pub fn (mut p FileParser) parse_struct() &ast.Type {
 	mut n := if p.tok.typ == .name {
 		p.name()
 	} else {
-		'anon_struct_${p.tmp()}' 
+		'anon_struct_$p.tmp()'
 	}
 	p.check(.lcbr)
 	p.next()

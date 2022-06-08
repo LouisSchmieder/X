@@ -1,6 +1,6 @@
 module ast
 
-pub type TypeInfo = DataType | Enum | Pointer | Struct | Unresolved | Alias
+pub type TypeInfo = Alias | DataType | Enum | Pointer | Struct | Unresolved
 
 [heap]
 pub struct Type {
@@ -95,7 +95,7 @@ pub fn create_type(name string, info TypeInfo) &Type {
 }
 
 pub fn create_alias(name string, typ &Type) &Type {
-	return create_type(name, Alias{base:typ})
+	return create_type(name, Alias{ base: typ })
 }
 
 pub fn create_struct(fields []StructField) Struct {
@@ -127,6 +127,16 @@ pub fn (st Struct) size() int {
 	return st.offset('')
 }
 
+pub fn (st Struct) get_struct_field(name string) StructField {
+	arr := st.fields.filter(it.name == name)
+	if arr.len == 0 {
+		return StructField{
+			typ: 0
+		}
+	}
+	return arr[0]
+}
+
 pub fn (st Struct) offset(name string) int {
 	mut i := 0
 	for field in st.fields {
@@ -136,4 +146,55 @@ pub fn (st Struct) offset(name string) int {
 		i += field.typ.size()
 	}
 	return i
+}
+
+pub fn (t Type) == (t2 Type) bool {
+	if t.info is Alias {
+		return t.get_alias() == t2
+	}
+	if t2.info is Alias {
+		return t == t2.get_alias()
+	}
+	if t.info is Enum {
+		if t2.info is Enum {
+			for key, value in t.get_enum_info().options {
+				if t2.get_enum_info().options[key] != value {
+					return false
+				}
+			}
+			return true
+		}
+	}
+	if t.info is Struct {
+		if t2.info is Struct {
+			for i in 0 .. t.get_struct_info().fields.len {
+				if t.get_struct_info().fields[i].typ != t2.get_struct_info().fields[i].typ {
+					return false
+				}
+				// Add strict name mode
+			}
+			return true
+		}
+	}
+	if t.info is Pointer {
+		if t2.info is Pointer {
+			if t.get_pointer().size != t2.get_pointer().size {
+				return false
+			}
+			// Strict pointer type mode
+			return true
+		}
+	}
+	if t.info is DataType {
+		if t2.info is DataType {
+			if t.get_data_info().size != t2.get_data_info().size {
+				return false
+			}
+			if t.get_data_info().unsigned != t2.get_data_info().unsigned {
+				return false
+			}
+			return true
+		}
+	}
+	return false
 }

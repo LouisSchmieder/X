@@ -58,6 +58,15 @@ pub fn (table TypeTable) get_type(name string) &Type {
 	return table.types[table.type_idxs[name]]
 }
 
+pub fn (table TypeTable) get_unsigned_type(name string) &Type {
+	t := table.get_type(name)
+	mut typ := *t
+	if mut typ.info is DataType {
+		typ.info.unsigned = true
+	}
+	return &typ
+}
+
 pub fn (mut table TypeTable) add_default_types() {
 	// Void
 	table.add_type(create_type('void', create_datatype(0, false)))

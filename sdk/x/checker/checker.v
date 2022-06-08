@@ -8,8 +8,8 @@ pub struct Checker {
 	files []&ast.File
 	scope &ast.Scope
 	unres &ast.TypeTable
-	table &ast.TypeTable
 mut:
+	table   &ast.TypeTable
 	working int
 }
 
@@ -21,7 +21,7 @@ mut:
 	scope &ast.Scope
 
 	required_return_type &ast.Type = &ast.Type(0)
-	returns int
+	returns              int
 }
 
 pub fn create_checker(parsed_files []&ast.File, parsed_table &ast.TypeTable, parsed_unres &ast.TypeTable, parsed_scope &ast.Scope) &Checker {
@@ -42,7 +42,7 @@ pub fn (mut c Checker) check() ? {
 	}
 }
 
-fn check_file(mut checker &Checker, file &ast.File) {
+fn check_file(mut checker Checker, file &ast.File) {
 	mut c := FileChecker{
 		checker: checker
 		file: file
@@ -72,7 +72,7 @@ fn (mut c FileChecker) error(msg string, pos token.Position) {
 fn (mut c FileChecker) stmt(mut stmt ast.Stmt) {
 	match mut stmt {
 		ast.ExprStmt {
-			c.expr(mut stmt.expr)
+			c.expr(stmt.expr)
 		}
 		ast.BlockStmt {
 			c.block_stmt(mut stmt)
@@ -87,7 +87,57 @@ fn (mut c FileChecker) stmt(mut stmt ast.Stmt) {
 	}
 }
 
-fn (mut c FileChecker) expr(mut expr ast.Expr) &ast.Type {
+fn (mut c FileChecker) expr(expr ast.Expr) &ast.Type {
+	typ := match expr {
+		ast.EmptyExpr {
+			c.get_type('void')
+		}
+		ast.CastExpr {
+			c.cast_expr(expr)
+		}
+		ast.FnCallExpr {
+			c.get_type('void')
+		}
+		ast.IdentExpr {
+			c.get_type('void')
+		}
+		ast.NameExpr {
+			c.get_type('void')
+		}
+		ast.NumberExpr {
+			c.get_type('dword')
+		}
+		ast.StringExpr {
+			c.checker.table.create_pointer(c.get_unsigned_type('byte'))
+		}
+		ast.StructFieldExpr {
+			c.get_type('void')
+		}
+		ast.StructInitExpr {
+			c.struct_init(expr)
+		}
+	}
+	return typ
+}
+
+fn (c FileChecker) get_type(name string) &ast.Type {
+	return if c.checker.table.type_exists(name) {
+		c.checker.table.get_type(name)
+	} else if c.file.table.type_exists(name) {
+		c.file.table.get_type(name)
+	} else {
+		voidptr(0)
+	}
+}
+
+fn (c FileChecker) get_unsigned_type(name string) &ast.Type {
+	return if c.checker.table.type_exists(name) {
+		c.checker.table.get_unsigned_type(name)
+	} else if c.file.table.type_exists(name) {
+		c.file.table.get_unsigned_type(name)
+	} else {
+		voidptr(0)
+	}
 }
 
 fn (mut c FileChecker) block_stmt(mut node ast.BlockStmt) {
@@ -103,7 +153,7 @@ fn (mut c FileChecker) fn_stmt(mut node ast.FnStmt) {
 	defer {
 		c.scope = c.scope.parent
 	}
-	if node.return_type != c.checker.table.get_type('void') {
+	if node.return_type != c.get_type('void') {
 		c.typ(node.return_type, node.ret_pos)
 		c.required_return_type = node.return_type
 		return_need = true
@@ -127,20 +177,37 @@ fn (mut c FileChecker) fn_stmt(mut node ast.FnStmt) {
 		if c.returns == 0 {
 			c.error('Missing return at the end of function `$node.name`', node.pos)
 		}
-	} 
+	}
 }
 
 fn (mut c FileChecker) assign_stmt(mut node ast.AssignStmt) {
-	mut typ := c.checker.table.get_type('void')
-	match node.left {
-		ast.IdentExpr {
-			
-		}
-		ast.StructFieldExpr {
+	left := c.expr(node.left)
+	right := c.expr(node.right)
 
+	if left != right {
+		c.error('Mismatched types expected: `$left.name` but got `$right.name`', node.pos)
+	}
+}
+
+fn (mut c FileChecker) cast_expr(node ast.CastExpr) &ast.Type {
+	c.expr(node.expr)
+	return node.to
+}
+
+fn (mut c FileChecker) struct_init(node ast.StructInitExpr) &ast.Type {
+	st := c.get_type(node.name).get_alias()
+	info := st.get_struct_info()
+
+	for key, val in node.fields {
+		sf := info.get_struct_field(key)
+		if sf.name != key {
+			c.error('Unknown struct field', val.pos)
 		}
-		else {
-			c.error('Unexpected expr', node.left.pos)
+		t := c.expr(val)
+		if sf.typ != t {
+			c.error('Mismatched types expected `$sf.typ.name` but got `$t.name`', val.pos)
 		}
 	}
+
+	return st
 }

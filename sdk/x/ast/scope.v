@@ -10,15 +10,15 @@ pub mut:
 
 pub struct Variable {
 pub mut:
-	typ  &Type
-	name string
+	typ     &Type
+	name    string
 	created bool
 }
 
 pub struct Function {
 pub mut:
-	ret_type &Type
-	name string
+	ret_type  &Type
+	name      string
 	parameter []FnParameter
 }
 

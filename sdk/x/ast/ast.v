@@ -4,7 +4,8 @@ import token
 
 pub type Stmt = AssignStmt | BlockStmt | EmptyStmt | ExprStmt | FnStmt | TypeStmt
 
-pub type Expr = EmptyExpr
+pub type Expr = CastExpr
+	| EmptyExpr
 	| FnCallExpr
 	| IdentExpr
 	| NameExpr
@@ -74,6 +75,14 @@ pub:
 	name string
 }
 
+pub struct CastExpr {
+pub:
+	pos token.Position
+	to  &Type
+pub mut:
+	expr Expr
+}
+
 pub struct EmptyExpr {
 pub:
 	pos token.Position
@@ -116,7 +125,7 @@ pub enum AssignType {
 
 pub struct FnParameter {
 pub:
-	pos token.Position
+	pos  token.Position
 	name string
 	typ  &Type
 }
